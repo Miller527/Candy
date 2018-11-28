@@ -1,0 +1,16 @@
+*.pyc
+.idea
+.svn
+*.zip
+*.rar
+*.tgz
+*.tar.gz
+*.swp
+*.c
+*.so
+*.log
+*/log/*
+*/logs/*
+logs
+logs/*
+*.data

@@ -166,6 +166,7 @@ record_obj = MySQLLibrary()
 from interface import IBehaviorLog
 
 
+
 class MySQLDB(IBehaviorLog):
     def init(self):
         self.pool = self.kwargs.get("pool")
@@ -180,7 +181,7 @@ class MySQLDB(IBehaviorLog):
                     r = await cur.fetchall()
         return r
 
-    async def _insert(self, sql):
+    async def _execute(self, sql):
         async with (await self.pool.acquire()) as conn:
             async with conn.cursor() as cur:
                 res = await cur.execute(sql)
@@ -194,12 +195,17 @@ class MySQLDB(IBehaviorLog):
 
     def insert(self, sql, *args):
         sql = self.join_sql(sql, *args)
-        res = self._insert(sql)
+        res = self._execute(sql)
         return res
 
     def delete(self, sql, *args):
         sql = self.join_sql(sql, *args)
-        res = self._insert(sql)
+        res = self._execute(sql)
+        return res
+
+    def update(self, sql, *args):
+        sql = self.join_sql(sql, *args)
+        res = self._execute(sql)
         return res
 
     @staticmethod

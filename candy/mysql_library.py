@@ -162,9 +162,7 @@ class MySQLLibrary(object):
 
 record_obj = MySQLLibrary()
 
-
 from interface import IBehaviorLog
-
 
 
 class MySQLDB(IBehaviorLog):
@@ -179,6 +177,7 @@ class MySQLDB(IBehaviorLog):
                     r = await cur.fetchone()
                 else:
                     r = await cur.fetchall()
+            conn.close()
         return r
 
     async def _execute(self, sql):
@@ -186,6 +185,7 @@ class MySQLDB(IBehaviorLog):
             async with conn.cursor() as cur:
                 res = await cur.execute(sql)
                 await conn.commit()
+            conn.close()
         return res
 
     def select(self, sql, *args, **kwargs):
@@ -207,6 +207,25 @@ class MySQLDB(IBehaviorLog):
         sql = self.join_sql(sql, *args)
         res = self._execute(sql)
         return res
+
+    async def _transact(self, *args):
+        async with (await self.pool.acquire()) as conn:
+            async with conn.cursor() as cur:
+                status = True
+                for sql in args:
+                    res = await cur.execute(sql)
+                    if not res:
+                        status = False
+                if status:
+                    await conn.commit()
+            conn.close()
+        return status
+
+    def transact(self, *args):
+        if not args:
+            return False
+
+        return self._transact(*args)
 
     @staticmethod
     def join_sql(sql, *args):

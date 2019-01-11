@@ -170,7 +170,7 @@ class MySQLDB(IBehaviorLog):
         self.pool = self.kwargs.get("pool")
 
     async def _select(self, sql, **kwargs):
-        async with (await self.pool.acquire()) as conn:
+        async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(sql)
                 if kwargs.get("fetchone") is True:
@@ -181,7 +181,7 @@ class MySQLDB(IBehaviorLog):
         return r
 
     async def _execute(self, sql):
-        async with (await self.pool.acquire()) as conn:
+        async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 res = await cur.execute(sql)
                 await conn.commit()
@@ -209,7 +209,7 @@ class MySQLDB(IBehaviorLog):
         return res
 
     async def _transact(self, *args):
-        async with (await self.pool.acquire()) as conn:
+        async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 status = True
                 for sql in args:
@@ -231,8 +231,9 @@ class MySQLDB(IBehaviorLog):
     def join_sql(sql, *args):
         return sql % tuple(args) if args else sql
 
-    def close(self):
-        pass
+    async def close(self):
+        self.pool.close()
+        await self.pool.wait_closed()
 
     def write(self, data: dict):
         pass
